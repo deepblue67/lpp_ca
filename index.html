@@ -8,10 +8,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --navy:         #1A2B52;
-      --indigo:       #3B5998;
-      --indigo-mid:   #5472B5;
-      --indigo-light: #B8C8E8;
+      --navy:         #2E4E8C;
+      --indigo:       #5072B8;
+      --indigo-mid:   #6A8FCC;
+      --indigo-light: #C8D8F0;
       --indigo-pale:  #EBF0FA;
       --amber:        #E8A020;
       --amber-light:  #FFD080;
@@ -27,7 +27,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
     header {
-      background: linear-gradient(135deg, var(--navy) 0%, #0F1B3A 100%);
+      background: linear-gradient(135deg, var(--navy) 0%, #1E3A7A 100%);
       padding: 0 32px; display: flex; align-items: center; justify-content: space-between;
       height: 70px; box-shadow: 0 2px 16px rgba(0,0,0,.25);
       position: sticky; top: 0; z-index: 100;
@@ -200,6 +200,7 @@ const SHEET_ID = '1jh3Mce91LvENKRVGDsfAru1hRGvo7Uz1Ge2FsHYSw-k';
 let APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycKoHGdiUe0MREknK8zrduuIou2yqfRMyLo8MSEPN0xxe4F4W3m0w23Y1dT-of9PBU/exec';
 
 const SITES = ['Lingo','Stras','Eckbo','Schilic','Illkirch'];
+const SITE_NAMES = { Lingo:'Lingolsheim', Stras:'Strasbourg', Eckbo:'Eckbolsheim', Schilic:'Schiltigheim', Illkirch:'Illkirch' };
 const MOIS_FULL   = ['Octobre','Novembre','Décembre','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre'];
 const MOIS_FISCAL = {'octobre':0,'novembre':1,'décembre':2,'janvier':3,'février':4,'mars':5,'avril':6,'mai':7,'juin':8,'juillet':9,'août':10,'septembre':11};
 const ANNEE_ORDER = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26','2026-27'];
@@ -229,7 +230,7 @@ async function loadData() {
     document.getElementById('last-update').textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     const savedMags = getChecked('ms-magasin');
     const savedYrs  = getChecked('ms-annee');
-    buildMultiselect('ms-magasin', SITES, 'Tous les magasins', savedMags.length ? savedMags : null);
+    buildMultiselect('ms-magasin', SITES, 'Tous les magasins', savedMags.length ? savedMags : null, SITE_NAMES);
     buildMultiselect('ms-annee', ANNEE_ORDER.filter(y => data.some(d => d.year===y)), 'Toutes les années', savedYrs.length ? savedYrs : null);
     applyFilters();
   } catch(e) {
@@ -271,11 +272,12 @@ function parseHistoriqueCSV(csv) {
   return rows;
 }
 
-function buildMultiselect(id,items,allLabel,preselected) {
+function buildMultiselect(id,items,allLabel,preselected,labels) {
   const list=document.getElementById(id+'-list');
   list.innerHTML=`<label class="multiselect-item"><input type="checkbox" id="${id}-all" onchange="toggleAll('${id}','${allLabel}')"> Tous</label><div class="multiselect-sep"></div>`+
     items.map(item=>{const chk=!preselected||preselected.includes(item)?'checked':'';
-      return `<label class="multiselect-item"><input type="checkbox" class="${id}-item" value="${item}" ${chk} onchange="updateMultiselectLabel('${id}','${allLabel}')"> ${item}</label>`;
+      const dn=labels?(labels[item]||item):item;
+      return `<label class="multiselect-item"><input type="checkbox" class="${id}-item" value="${item}" ${chk} onchange="updateMultiselectLabel('${id}','${allLabel}')"> ${dn}</label>`;
     }).join('');
   updateMultiselectLabel(id,allLabel);
 }
@@ -323,7 +325,7 @@ function updateActiveFiltersBar(mags,yrs) {
   let html='';
   if (magsActive) {
     html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="active-filter-prefix">Magasins :</span>';
-    html+=mags.map(m=>`<span class="active-filter-tag" style="background:${SITE_COLORS[m]||'#3B5998'}">${m}</span>`).join('');
+    html+=mags.map(m=>`<span class="active-filter-tag" style="background:${SITE_COLORS[m]||'#3B5998'}">${SITE_NAMES[m]||m}</span>`).join('');
     html+='</div>';
   }
   if (magsActive&&yrsActive) html+='<div class="active-filter-sep"></div>';
@@ -461,7 +463,7 @@ function renderChartChrono(data,sites) {
   const sorted=[...data].sort((a,b)=>a.calYear!==b.calYear?a.calYear-b.calYear:a.fiscalIdx-b.fiscalIdx);
   const labels=sorted.map(r=>r.mois.split(' ').map((w,i)=>i===0?w.slice(0,3):w).join(' '));
   const datasets=sites.map(site=>({
-    label:site,data:sorted.map(r=>r[site]||0),
+    label:SITE_NAMES[site]||site,data:sorted.map(r=>r[site]||0),
     borderColor:SITE_COLORS[site],backgroundColor:SITE_COLORS_LIGHT[site],
     borderWidth:2,fill:false,tension:.3,pointRadius:2,
   }));
@@ -476,7 +478,7 @@ function renderChartDonut(data,sites) {
   const ctx=document.getElementById('chartDonut'); if(!ctx)return;
   const vals=sites.map(s=>data.reduce((a,r)=>a+(r[s]||0),0));
   const total=vals.reduce((a,b)=>a+b,0);
-  CHARTS.donut=new Chart(ctx,{type:'doughnut',data:{labels:sites,datasets:[{data:vals,backgroundColor:sites.map(s=>SITE_COLORS[s]),borderWidth:2,borderColor:'#fff'}]},options:{
+  CHARTS.donut=new Chart(ctx,{type:'doughnut',data:{labels:sites.map(s=>SITE_NAMES[s]||s),datasets:[{data:vals,backgroundColor:sites.map(s=>SITE_COLORS[s]),borderWidth:2,borderColor:'#fff'}]},options:{
     responsive:true,cutout:'62%',
     plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:12}},
       tooltip:{callbacks:{label:c=>` ${c.label} : ${fmt0(c.raw)} € (${(c.raw/total*100).toFixed(1)}%)`}}}
@@ -539,7 +541,7 @@ function renderRankingTable(data,sites) {
       const pct=(t.ca/max*100).toFixed(0);
       const rCls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
       return `<tr><td><span class="rank-badge ${rCls}">${i+1}</span></td>
-        <td><strong style="color:${SITE_COLORS[t.site]}">${t.site}</strong></td>
+        <td><strong style="color:${SITE_COLORS[t.site]}">${SITE_NAMES[t.site]||t.site}</strong></td>
         <td>${fmt0(t.ca)} €</td>
         <td><div class="bar-inline"><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${SITE_COLORS[t.site]}"></div></div><span style="font-size:12px;color:var(--text-light)">${pct}%</span></div></td>
       </tr>`;}).join('')}
