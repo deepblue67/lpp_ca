@@ -158,7 +158,7 @@
     <div class="brand-icon">☕</div>
     <div class="header-title">
       <h1>La Petite Pause</h1>
-      <p>Dashboard Historique CA HT — 2020 → 2027</p>
+      <p>Dashboard Historique CA HT — 2020 → 2026</p>
     </div>
   </div>
   <div class="header-right">
@@ -231,7 +231,7 @@ async function loadData() {
     const savedMags = getChecked('ms-magasin');
     const savedYrs  = getChecked('ms-annee');
     buildMultiselect('ms-magasin', SITES, 'Tous les magasins', savedMags.length ? savedMags : null, SITE_NAMES);
-    buildMultiselect('ms-annee', ANNEE_ORDER.filter(y => data.some(d => d.year===y)), 'Toutes les années', savedYrs.length ? savedYrs : null);
+    buildMultiselect('ms-annee', ANNEE_ORDER.filter(y => data.some(d => d.year===y)), 'Toutes les années', savedYrs.length ? savedYrs : ['2024-25','2025-26']);
     applyFilters();
   } catch(e) {
     document.getElementById('content').innerHTML = `<div class="loading"><span style="font-size:40px">⚠️</span><span style="color:#E05A4A;font-weight:600">Erreur : ${e.message}</span><button class="btn-refresh" onclick="loadData()">↻ Réessayer</button></div>`;
@@ -428,6 +428,12 @@ function renderDashboard(data, selectedSites, selectedYears) {
       </div>
     </div>
     <div class="card card-full">
+      <div class="card-title"><span class="dot"></span>Synthèse des évolutions mensuelles — CA moyen / jour</div>
+      <div class="card-subtitle">CA HT divisé par le nombre de jours travaillés — comparaison mois par mois entre années</div>
+      <div class="chart-wrap" style="margin-bottom:24px"><canvas id="chartMoyEvol" height="80"></canvas></div>
+      ${renderMoyJourTable(data,selectedSites,years)}
+    </div>
+    <div class="card card-full">
       <div class="card-title"><span class="dot"></span>Tableau détaillé</div>
       <div class="card-subtitle">CA HT mensuel par année fiscale — total des magasins sélectionnés + évolution</div>
       ${renderDetailTable(data,selectedSites,years)}
@@ -441,6 +447,7 @@ function renderDashboard(data, selectedSites, selectedYears) {
   renderChartMoy(data,selectedSites,years);
   renderChartCumul(data,selectedSites,years);
   renderChartNvsN1(data,selectedSites,years);
+  renderChartMoyEvol(data,selectedSites,years);
 }
 
 function kpi(icon,label,val,sub,cls) {
@@ -651,6 +658,86 @@ function renderDetailTable(data,sites,years) {
   return `<div class="table-wrap"><table>
     <thead><tr><th>Mois fiscal</th>${hCols}</tr></thead>
     <tbody>${rows}<tr class="total-row"><td>TOTAL ANNUEL</td>${totCells}</tr></tbody>
+  </table></div>`;
+}
+
+function renderChartMoyEvol(data,sites,years) {
+  const ctx=document.getElementById('chartMoyEvol'); if(!ctx)return;
+  const datasets=years.map(yr=>({
+    label:yr,
+    data:MOIS_FULL.map((_,fi)=>{
+      const r=data.find(d=>d.year===yr&&d.fiscalIdx===fi);
+      if(!r||!r.nb_jours)return null;
+      return Math.round(sites.reduce((s,si)=>s+(r[si]||0),0)/r.nb_jours);
+    }),
+    borderColor:YEAR_COLORS[yr],backgroundColor:YEAR_COLORS[yr]+'33',
+    borderWidth:2.5,fill:false,tension:.35,pointRadius:4,spanGaps:true,
+  }));
+  CHARTS.moyEvol=new Chart(ctx,{type:'line',data:{labels:MOIS_FULL,datasets},options:{
+    responsive:true,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{position:'top',labels:{font:{family:'Inter',size:11},padding:16}},
+      tooltip:{callbacks:{label:c=>{
+        const yr=c.dataset.label,fi=c.dataIndex,val=c.raw;
+        if(val===null)return ` ${yr} : —`;
+        const prevYr=ANNEE_ORDER[ANNEE_ORDER.indexOf(yr)-1];
+        const prevRow=prevYr?data.find(d=>d.year===prevYr&&d.fiscalIdx===fi):null;
+        const prevVal=prevRow&&prevRow.nb_jours?Math.round(sites.reduce((s,si)=>s+(prevRow[si]||0),0)/prevRow.nb_jours):null;
+        let evo='';
+        if(prevVal&&prevVal>0){const p=((val-prevVal)/prevVal*100);evo=` (${p>0?'▲ +':'▼ '}${p.toFixed(1)}% vs ${prevYr})`;}
+        return ` ${yr} : ${fmt0(val)} €/j${evo}`;
+      }}}
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{font:{family:'Inter',size:11}}},
+      y:{ticks:{font:{family:'Inter',size:11},callback:v=>fmt0(v)+' €'},grid:{color:'#E8EDF8'}}
+    }
+  }});
+}
+
+function renderMoyJourTable(data,sites,years) {
+  const getMoy=(yr,fi)=>{
+    const r=data.find(d=>d.year===yr&&d.fiscalIdx===fi);
+    if(!r||!r.nb_jours)return null;
+    return Math.round(sites.reduce((s,si)=>s+(r[si]||0),0)/r.nb_jours);
+  };
+  const evoBadge=(v,vp)=>{
+    if(v===null||vp===null)return '<td style="text-align:center;color:#ccc">—</td>';
+    const p=((v-vp)/vp*100);
+    const cls=p>1?'badge-up':p<-1?'badge-down':'badge-flat';
+    return `<td style="text-align:center"><span class="badge ${cls}">${p>0?'+':''}${p.toFixed(1)}%</span></td>`;
+  };
+
+  let hCols=`<th style="text-align:right">${years[0]}</th>`;
+  for(let i=1;i<years.length;i++) hCols+=`<th style="text-align:right">${years[i]}</th><th style="text-align:center;font-size:11px">vs N-1</th>`;
+
+  const rows=MOIS_FULL.map((ml,fi)=>{
+    const vals=years.map(yr=>getMoy(yr,fi));
+    if(vals.every(v=>v===null))return '';
+    let cells=`<td style="text-align:right">${vals[0]!==null?fmt0(vals[0])+' €':'<span style="color:#ccc">—</span>'}</td>`;
+    for(let i=1;i<years.length;i++){
+      cells+=`<td style="text-align:right">${vals[i]!==null?fmt0(vals[i])+' €':'<span style="color:#ccc">—</span>'}</td>`;
+      cells+=evoBadge(vals[i],vals[i-1]);
+    }
+    return `<tr><td><strong>${ml}</strong></td>${cells}</tr>`;
+  }).join('');
+
+  const moyGlob=yr=>{
+    const rows2=data.filter(r=>r.year===yr&&r.nb_jours>0);
+    const totCA=rows2.reduce((s,r)=>s+sites.reduce((a,si)=>a+(r[si]||0),0),0);
+    const totJ=rows2.reduce((s,r)=>s+r.nb_jours,0);
+    return totJ>0?Math.round(totCA/totJ):null;
+  };
+  const globVals=years.map(yr=>moyGlob(yr));
+  let globCells=`<td style="text-align:right"><strong>${globVals[0]!==null?fmt0(globVals[0])+' €':'—'}</strong></td>`;
+  for(let i=1;i<years.length;i++){
+    globCells+=`<td style="text-align:right"><strong>${globVals[i]!==null?fmt0(globVals[i])+' €':'—'}</strong></td>`;
+    globCells+=evoBadge(globVals[i],globVals[i-1]);
+  }
+
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>Mois fiscal</th>${hCols}</tr></thead>
+    <tbody>${rows}<tr class="total-row"><td>MOY. ANNUELLE / JOUR</td>${globCells}</tr></tbody>
   </table></div>`;
 }
 
