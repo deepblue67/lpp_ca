@@ -234,7 +234,7 @@ async function loadData() {
       if (j.status !== 'ok') throw new Error(j.error || 'Erreur Apps Script');
       data = j.data;
     } else {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=HISTORIQUE`;
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=HISTORIQUE%20CA%20HT`;
       const r = await fetch(url);
       if (!r.ok) throw new Error('Accès refusé');
       data = parseHistoriqueCSV(await r.text());
