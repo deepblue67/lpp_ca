@@ -18,9 +18,12 @@
     header{background:linear-gradient(135deg,#4A7CC7 0%,#2E5FAA 100%);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:80px;box-shadow:0 2px 16px rgba(0,0,0,.25);position:sticky;top:0;z-index:100;}
     .header-left{display:flex;align-items:center;gap:14px;}
     .brand-icon{display:flex;align-items:center;}
-    .header-title{color:#fff;position:absolute;left:50%;transform:translateX(-50%);text-align:center;}
-    .header-title h1{font-size:26px;font-weight:800;letter-spacing:.5px;line-height:1.1;}
-    .header-title p{font-size:12px;color:var(--indigo-light);font-weight:400;margin-top:3px;}
+    .header-title{color:#fff;}
+    .header-title h1{font-size:15px;font-weight:700;letter-spacing:.3px;}
+    .header-title p{font-size:11px;color:var(--indigo-light);font-weight:400;margin-top:1px;}
+    .header-center{position:absolute;left:50%;transform:translateX(-50%);text-align:center;color:#fff;}
+    .header-center h2{font-size:26px;font-weight:800;letter-spacing:.5px;line-height:1.1;}
+    .header-center p{font-size:12px;color:var(--indigo-light);font-weight:400;margin-top:3px;}
     .header-right{display:flex;align-items:center;gap:10px;}
     #last-update{font-size:11px;color:var(--indigo-light);}
     .btn-refresh{background:var(--indigo-mid);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s;}
@@ -123,9 +126,13 @@
       </svg>
     </div>
     <div class="header-title">
-      <h1>Ventilation CA TTC</h1>
-      <p>Détail par activité et par magasin</p>
+      <h1>La Petite Pause</h1>
+      <p>Ventilation CA TTC</p>
     </div>
+  </div>
+  <div class="header-center">
+    <h2>Ventilation CA TTC</h2>
+    <p>Détail par activité et par magasin</p>
   </div>
   <div class="header-right">
     <span id="last-update">—</span>
