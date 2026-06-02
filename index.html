@@ -434,14 +434,14 @@ function renderDashboard(data, selectedSites, selectedYears) {
       ${renderMoyJourTable(data,selectedSites,years)}
     </div>
     <div class="card card-full">
-      <div class="card-title"><span class="dot"></span>Analyse mensuelle par magasin</div>
-      <div class="card-subtitle">CA HT, jours travaillés et moyenne journalière par magasin — une table par année fiscale (moy/jour disponible à partir de 2025-26)</div>
-      ${renderIndicateurFabrique(data,selectedSites,years)}
-    </div>
-    <div class="card card-full">
       <div class="card-title"><span class="dot"></span>Tableau détaillé</div>
       <div class="card-subtitle">CA HT mensuel par année fiscale — total des magasins sélectionnés + évolution</div>
       ${renderDetailTable(data,selectedSites,years)}
+    </div>
+    <div class="card card-full">
+      <div class="card-title"><span class="dot"></span>Analyse mensuelle par magasin</div>
+      <div class="card-subtitle">CA HT, jours travaillés et moyenne journalière par magasin — une table par année fiscale (moy/jour disponible à partir de 2025-26)</div>
+      ${renderIndicateurFabrique(data,selectedSites,years)}
     </div>`;
 
   Object.values(CHARTS).forEach(c=>c.destroy()); CHARTS={};
