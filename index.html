@@ -434,6 +434,11 @@ function renderDashboard(data, selectedSites, selectedYears) {
       ${renderMoyJourTable(data,selectedSites,years)}
     </div>
     <div class="card card-full">
+      <div class="card-title"><span class="dot"></span>Analyse mensuelle par magasin</div>
+      <div class="card-subtitle">CA HT, jours travaillés et moyenne journalière par magasin — une table par année fiscale (moy/jour disponible à partir de 2025-26)</div>
+      ${renderIndicateurFabrique(data,selectedSites,years)}
+    </div>
+    <div class="card card-full">
       <div class="card-title"><span class="dot"></span>Tableau détaillé</div>
       <div class="card-subtitle">CA HT mensuel par année fiscale — total des magasins sélectionnés + évolution</div>
       ${renderDetailTable(data,selectedSites,years)}
@@ -659,6 +664,111 @@ function renderDetailTable(data,sites,years) {
     <thead><tr><th>Mois fiscal</th>${hCols}</tr></thead>
     <tbody>${rows}<tr class="total-row"><td>TOTAL ANNUEL</td>${totCells}</tr></tbody>
   </table></div>`;
+}
+
+function renderIndicateurFabrique(data, sites, years) {
+  const SHOW_JOURS_FROM = ANNEE_ORDER.indexOf('2025-26');
+  const getFML = (yr, fi) => {
+    const y1 = parseInt(yr.split('-')[0]);
+    return MOIS_FULL[fi].slice(0,3) + '-' + String(fi <= 2 ? y1 : y1+1).slice(2);
+  };
+  const cell = (v, bold, color) => {
+    const sty = `text-align:right;font-size:12px${bold?';font-weight:700':''}${color?';color:'+color:''}`;
+    return `<td style="${sty}">${v > 0 ? fmt0(v)+' €' : '<span style="color:#ccc">—</span>'}</td>`;
+  };
+
+  let html = '';
+  for (const yr of years) {
+    const yrIdx = ANNEE_ORDER.indexOf(yr);
+    const showJours = yrIdx >= SHOW_JOURS_FROM;
+    const prevYr = yrIdx > 0 ? ANNEE_ORDER[yrIdx-1] : null;
+    const md = MOIS_FULL.map((_,fi) => data.find(d => d.year===yr && d.fiscalIdx===fi) || null);
+    if (!md.some(r=>r)) continue;
+
+    const ncols = MOIS_FULL.length + 1;
+
+    const colHdr = MOIS_FULL.map((_,fi) => {
+      const lbl = getFML(yr, fi);
+      return `<th style="text-align:right;min-width:72px;font-size:11px;${!md[fi]?'color:#aaa':''}">${lbl}</th>`;
+    }).join('');
+
+    // Section header row
+    const secRow = (label) =>
+      `<tr style="background:var(--indigo-pale)"><td colspan="${ncols}" style="font-size:10px;font-weight:700;color:var(--indigo);padding:4px 10px;letter-spacing:.6px;text-transform:uppercase">${label}</td></tr>`;
+
+    // CA rows per site
+    const caRows = sites.map(si =>
+      `<tr><td style="padding-left:12px;font-size:12px;color:${SITE_COLORS[si]}">${SITE_NAMES[si]||si}</td>` +
+      MOIS_FULL.map((_,fi) => cell(md[fi] ? (md[fi][si]||0) : 0)).join('') +
+      `</tr>`
+    ).join('');
+
+    // CA total row
+    const caTotalCells = MOIS_FULL.map((_,fi) => {
+      const v = md[fi] ? sites.reduce((s,si)=>s+(md[fi][si]||0),0) : 0;
+      return cell(v, true, 'var(--navy)');
+    }).join('');
+
+    // Jours row
+    const joursRow = showJours
+      ? `<tr>${['<td style="padding-left:12px;font-size:12px;color:var(--text-light)">Tous magasins</td>',
+          ...MOIS_FULL.map((_,fi)=>`<td style="text-align:right;font-size:12px;color:var(--text-light)">${md[fi]&&md[fi].nb_jours ? md[fi].nb_jours : '<span style="color:#ccc">—</span>'}</td>`)
+        ].join('')}</tr>` : '';
+
+    // Moy/jour rows per site
+    const moyRows = showJours ? sites.map(si =>
+      `<tr><td style="padding-left:12px;font-size:12px;color:${SITE_COLORS[si]}">${SITE_NAMES[si]||si}</td>` +
+      MOIS_FULL.map((_,fi) => {
+        const r = md[fi]; if (!r||!r.nb_jours) return `<td style="text-align:right;font-size:12px"><span style="color:#ccc">—</span></td>`;
+        return cell(Math.round((r[si]||0)/r.nb_jours));
+      }).join('') + `</tr>`
+    ).join('') : '';
+
+    // Moy/jour total row + % vs N-1
+    const moyTotalRow = showJours ? (() => {
+      const cells = MOIS_FULL.map((_,fi) => {
+        const r = md[fi]; if (!r||!r.nb_jours) return `<td style="text-align:right;font-size:12px"><span style="color:#ccc">—</span></td>`;
+        const v = Math.round(sites.reduce((s,si)=>s+(r[si]||0),0)/r.nb_jours);
+        let badge = '';
+        if (prevYr) {
+          const pr = data.find(d=>d.year===prevYr&&d.fiscalIdx===fi);
+          if (pr&&pr.nb_jours) {
+            const pv = Math.round(sites.reduce((s,si)=>s+(pr[si]||0),0)/pr.nb_jours);
+            if (pv>0) {
+              const p = ((v-pv)/pv*100);
+              const bg=p>1?'#D4EDDA':p<-1?'#F8D7DA':'#FFF3CD';
+              const col=p>1?'#155724':p<-1?'#721C24':'#856404';
+              badge=`<br><span style="font-size:10px;background:${bg};color:${col};padding:1px 5px;border-radius:99px;font-weight:700">${p>0?'+':''}${p.toFixed(0)}%</span>`;
+            }
+          }
+        }
+        return `<td style="text-align:right;font-size:12px;font-weight:700;color:var(--navy)">${v>0?fmt0(v)+' €':'—'}${badge}</td>`;
+      }).join('');
+      return `<tr style="background:var(--indigo-pale);border-top:2px solid var(--border)"><td style="font-weight:700;font-size:12px">TOTAL</td>${cells}</tr>`;
+    })() : '';
+
+    html += `
+      <div style="margin-bottom:28px">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;padding:7px 14px;background:linear-gradient(90deg,var(--navy),var(--indigo));border-radius:8px;display:inline-block">
+          Année fiscale ${yr}
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr style="background:var(--navy)">
+            <th style="min-width:175px;color:#fff;text-align:left;font-size:12px">Indicateur</th>${colHdr}
+          </tr></thead>
+          <tbody>
+            ${secRow('CA HT par magasin')}
+            ${caRows}
+            <tr style="border-top:2px solid var(--border);background:var(--indigo-pale)">
+              <td style="font-weight:700;font-size:12px">TOTAL CA HT</td>${caTotalCells}
+            </tr>
+            ${showJours ? secRow('Jours travaillés') + joursRow : ''}
+            ${showJours ? secRow('Moyenne CA HT / jour') + moyRows + moyTotalRow : ''}
+          </tbody>
+        </table></div>
+      </div>`;
+  }
+  return html || '<p style="color:var(--text-light);text-align:center;padding:20px">Aucune donnée disponible</p>';
 }
 
 function renderChartMoyEvol(data,sites,years) {
