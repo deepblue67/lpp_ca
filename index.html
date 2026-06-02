@@ -33,7 +33,7 @@
       position: sticky; top: 0; z-index: 100;
     }
     .header-left { display: flex; align-items: center; gap: 14px; }
-    .brand-icon { font-size: 32px; line-height: 1; }
+    .brand-icon { font-size: 32px; line-height: 1; display:flex; align-items:center; }
     .header-title { color: #fff; }
     .header-title h1 { font-size: 18px; font-weight: 700; letter-spacing: .3px; }
     .header-title p  { font-size: 11px; color: var(--indigo-light); font-weight: 400; margin-top: 1px; }
@@ -155,7 +155,20 @@
 
 <header>
   <div class="header-left">
-    <div class="brand-icon">☕</div>
+    <div class="brand-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 100 100">
+        <!-- Cercle central -->
+        <circle cx="50" cy="50" r="24" fill="white"/>
+        <!-- Signe dollar -->
+        <text x="50" y="58" text-anchor="middle" font-size="30" font-weight="bold" fill="#2E4E8C" font-family="Arial">$</text>
+        <!-- Flèche du haut (gauche→droite) -->
+        <path d="M18 30 Q50 10 82 30" fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
+        <polygon points="82,30 70,22 78,42" fill="white"/>
+        <!-- Flèche du bas (droite→gauche) -->
+        <path d="M82 70 Q50 90 18 70" fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
+        <polygon points="18,70 30,78 22,58" fill="white"/>
+      </svg>
+    </div>
     <div class="header-title">
       <h1>La Petite Pause</h1>
       <p>Dashboard Historique CA HT — 2020 → 2026</p>
