@@ -15,12 +15,12 @@
     }
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-    header{background:linear-gradient(135deg,#4A7CC7 0%,#2E5FAA 100%);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:70px;box-shadow:0 2px 16px rgba(0,0,0,.25);position:sticky;top:0;z-index:100;}
+    header{background:linear-gradient(135deg,#4A7CC7 0%,#2E5FAA 100%);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:80px;box-shadow:0 2px 16px rgba(0,0,0,.25);position:sticky;top:0;z-index:100;}
     .header-left{display:flex;align-items:center;gap:14px;}
     .brand-icon{display:flex;align-items:center;}
-    .header-title{color:#fff;}
-    .header-title h1{font-size:18px;font-weight:700;letter-spacing:.3px;}
-    .header-title p{font-size:11px;color:var(--indigo-light);font-weight:400;margin-top:1px;}
+    .header-title{color:#fff;position:absolute;left:50%;transform:translateX(-50%);text-align:center;}
+    .header-title h1{font-size:26px;font-weight:800;letter-spacing:.5px;line-height:1.1;}
+    .header-title p{font-size:12px;color:var(--indigo-light);font-weight:400;margin-top:3px;}
     .header-right{display:flex;align-items:center;gap:10px;}
     #last-update{font-size:11px;color:var(--indigo-light);}
     .btn-refresh{background:var(--indigo-mid);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s;}
@@ -123,8 +123,8 @@
       </svg>
     </div>
     <div class="header-title">
-      <h1>La Petite Pause</h1>
-      <p>Dashboard Ventilation CA TTC — Détail par origine et par magasin</p>
+      <h1>Ventilation CA TTC</h1>
+      <p>Détail par activité et par magasin</p>
     </div>
   </div>
   <div class="header-right">
@@ -146,9 +146,9 @@
     <div class="multiselect-dropdown" id="ms-mois-list"></div>
   </div>
   <div class="filter-sep"></div>
-  <span class="filter-label">Origine CA</span>
+  <span class="filter-label">Activité CA</span>
   <div class="multiselect" id="ms-cat">
-    <button class="multiselect-btn" id="ms-cat-label" onclick="toggleDropdown('ms-cat')">Toutes les origines</button>
+    <button class="multiselect-btn" id="ms-cat-label" onclick="toggleDropdown('ms-cat')">Toutes les activités</button>
     <div class="multiselect-dropdown" id="ms-cat-list"></div>
   </div>
 </div>
@@ -198,7 +198,7 @@ async function loadData() {
     const availMois  = [...new Set(rawData.map(r=>r.monthYear))].sort(sortMonthYear);
     buildMultiselect('ms-magasin', SITES,     'Tous les magasins',   savedMags.length?savedMags:null, SITE_NAMES);
     buildMultiselect('ms-mois',    availMois, 'Tous les mois',       savedMois.length?savedMois:null);
-    buildMultiselect('ms-cat',     CATS,      'Toutes les origines', savedCats.length?savedCats:null, CAT_NAMES);
+    buildMultiselect('ms-cat',     CATS,      'Toutes les activités', savedCats.length?savedCats:null, CAT_NAMES);
     applyFilters();
   } catch(e) {
     document.getElementById('content').innerHTML = `<div class="loading"><span style="font-size:40px">⚠️</span><span style="color:#E05A4A;font-weight:600">Erreur : ${e.message}</span><button class="btn-refresh" onclick="loadData()">↻ Réessayer</button></div>`;
@@ -271,7 +271,7 @@ function updateActiveFiltersBar(mags,mois,cats) {
   if(ma&&mo)html+='<div class="active-filter-sep"></div>';
   if(mo){html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="active-filter-prefix">Mois :</span>';html+=mois.map(m=>`<span class="active-filter-tag" style="background:var(--indigo-mid)">${m}</span>`).join('');html+='</div>';}
   if((ma||mo)&&ca)html+='<div class="active-filter-sep"></div>';
-  if(ca){html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="active-filter-prefix">Origines :</span>';html+=cats.map(c=>`<span class="active-filter-tag" style="background:${CAT_COLORS[c]}">${CAT_NAMES[c]}</span>`).join('');html+='</div>';}
+  if(ca){html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="active-filter-prefix">Activités :</span>';html+=cats.map(c=>`<span class="active-filter-tag" style="background:${CAT_COLORS[c]}">${CAT_NAMES[c]}</span>`).join('');html+='</div>';}
   bar.innerHTML=html; bar.classList.remove('hidden');
 }
 
@@ -304,16 +304,16 @@ function renderDashboard(data, selectedSites, selectedCats) {
     <div class="kpi-grid">
       ${kpi('💶','CA TTC Total',fmt0(totalCA)+' €',months.length+' mois analysé'+(months.length>1?'s':''),'navy')}
       ${kpi('🏆','Meilleur mois',bestRow?bestRow.monthYear:'—',bestCA?fmt0(bestCA)+' €':'—','amber')}
-      ${kpi('📊','Origine dominante',domCat.cat?CAT_NAMES[domCat.cat]:'—',domCat.v?fmt0(domCat.v)+' €':'—','teal')}
+      ${kpi('📊','Activité dominante',domCat.cat?CAT_NAMES[domCat.cat]:'—',domCat.v?fmt0(domCat.v)+' €':'—','teal')}
       ${kpi('🏪','Magasin leader',domSite.si?(SITE_NAMES[domSite.si]||domSite.si):'—',domSite.v?fmt0(domSite.v)+' €':'—','coral')}
-      ${kpi('📈','Nb origines actives',selectedCats.length.toString(),selectedCats.map(c=>CAT_NAMES[c]).join(', ').slice(0,40)+(selectedCats.length>3?'…':''),'green')}
+      ${kpi('📈','Nb activités actives',selectedCats.length.toString(),selectedCats.map(c=>CAT_NAMES[c]).join(', ').slice(0,40)+(selectedCats.length>3?'…':''),'green')}
     </div>
 
     <div class="card card-full">
       <div class="card-header">
         <div>
-          <div class="card-title"><span class="dot"></span>Évolution mensuelle CA TTC par origine</div>
-          <div class="card-subtitle">Contribution de chaque origine au CA TTC mensuel — total des magasins sélectionnés</div>
+          <div class="card-title"><span class="dot"></span>Évolution mensuelle CA TTC par activité</div>
+          <div class="card-subtitle">Contribution de chaque activité au CA TTC mensuel — total des magasins sélectionnés</div>
         </div>
         <div class="card-toolbar">
           <button class="toggle-btn" id="btn-stacked" onclick="setStackMode('stacked')">Empilé</button>
@@ -326,7 +326,7 @@ function renderDashboard(data, selectedSites, selectedCats) {
     <div class="charts-row">
       <div class="card">
         <div class="card-title"><span class="dot"></span>Évolution par magasin</div>
-        <div class="card-subtitle">CA TTC mensuel par magasin — toutes origines sélectionnées</div>
+        <div class="card-subtitle">CA TTC mensuel par magasin — toutes activités sélectionnées</div>
         <div class="chart-wrap"><canvas id="chartSitesEvol" height="180"></canvas></div>
       </div>
       <div class="card">
@@ -338,32 +338,32 @@ function renderDashboard(data, selectedSites, selectedCats) {
 
     <div class="charts-row-2">
       <div class="card">
-        <div class="card-title"><span class="dot"></span>Répartition par origine</div>
-        <div class="card-subtitle">Part de chaque origine dans le CA TTC total</div>
+        <div class="card-title"><span class="dot"></span>Répartition par activité</div>
+        <div class="card-subtitle">Part de chaque activité dans le CA TTC total</div>
         <div class="chart-wrap"><canvas id="chartDonutCats" height="200"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title"><span class="dot"></span>Classement des origines</div>
+        <div class="card-title"><span class="dot"></span>Classement des activités</div>
         <div class="card-subtitle">CA TTC total par source de revenus sur la période</div>
         ${renderRankCats(data,selectedCats,selectedSites)}
       </div>
     </div>
 
     <div class="card card-full">
-      <div class="card-title"><span class="dot"></span>Tableau Mois × Origine</div>
-      <div class="card-subtitle">CA TTC mensuel par catégorie d'origine + part (%) sur le total du mois</div>
+      <div class="card-title"><span class="dot"></span>Tableau Mois × Activité</div>
+      <div class="card-subtitle">CA TTC mensuel par catégorie d'activité + part (%) sur le total du mois</div>
       ${renderTableCats(data,months,selectedCats,selectedSites)}
     </div>
 
     <div class="card card-full">
       <div class="card-title"><span class="dot"></span>Tableau Mois × Magasin</div>
-      <div class="card-subtitle">CA TTC mensuel par magasin — détail par origine sélectionnée</div>
+      <div class="card-subtitle">CA TTC mensuel par magasin — détail par activité sélectionnée</div>
       ${renderTableSites(data,months,selectedCats,selectedSites)}
     </div>
 
     <div class="card card-full">
-      <div class="card-title"><span class="dot"></span>Matrice Magasin × Origine</div>
-      <div class="card-subtitle">CA TTC total sur la période — croisement magasin et origine</div>
+      <div class="card-title"><span class="dot"></span>Matrice Magasin × Activité</div>
+      <div class="card-subtitle">CA TTC total sur la période — croisement magasin et activité</div>
       ${renderMatrixSitesCats(data,selectedCats,selectedSites)}
     </div>`;
 
@@ -451,7 +451,7 @@ function renderRankCats(data,cats,sites) {
   const totals=cats.map(cat=>({cat,v:data.reduce((s,r)=>s+getSiteCA(r,cat,sites),0)})).sort((a,b)=>b.v-a.v);
   const max=totals[0]?.v||1;
   return `<div class="table-wrap" style="margin-top:16px"><table>
-    <thead><tr><th>#</th><th>Origine</th><th>CA TTC Total</th><th>Part relative</th></tr></thead>
+    <thead><tr><th>#</th><th>Activité</th><th>CA TTC Total</th><th>Part relative</th></tr></thead>
     <tbody>${totals.map((t,i)=>{
       const pct=(t.v/max*100).toFixed(0);
       const rCls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
