@@ -15,7 +15,7 @@
     }
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-    header{background:linear-gradient(135deg,var(--navy) 0%,#1E3A7A 100%);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:70px;box-shadow:0 2px 16px rgba(0,0,0,.25);position:sticky;top:0;z-index:100;}
+    header{background:linear-gradient(135deg,#4A7CC7 0%,#2E5FAA 100%);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:70px;box-shadow:0 2px 16px rgba(0,0,0,.25);position:sticky;top:0;z-index:100;}
     .header-left{display:flex;align-items:center;gap:14px;}
     .brand-icon{display:flex;align-items:center;}
     .header-title{color:#fff;}
@@ -316,8 +316,8 @@ function renderDashboard(data, selectedSites, selectedCats) {
           <div class="card-subtitle">Contribution de chaque origine au CA TTC mensuel — total des magasins sélectionnés</div>
         </div>
         <div class="card-toolbar">
-          <button class="toggle-btn active" id="btn-stacked" onclick="setStackMode('stacked')">Empilé</button>
-          <button class="toggle-btn" id="btn-grouped" onclick="setStackMode('grouped')">Groupé</button>
+          <button class="toggle-btn" id="btn-stacked" onclick="setStackMode('stacked')">Empilé</button>
+          <button class="toggle-btn active" id="btn-grouped" onclick="setStackMode('grouped')">Groupé</button>
         </div>
       </div>
       <div class="chart-wrap"><canvas id="chartStackEvol" height="90"></canvas></div>
@@ -379,7 +379,7 @@ function kpi(icon,label,val,sub,cls){
 }
 
 // ── Charts ────────────────────────────────────────────────────────────────────
-let stackMode = 'stacked';
+let stackMode = 'grouped';
 function setStackMode(mode) {
   stackMode = mode;
   document.getElementById('btn-stacked').classList.toggle('active', mode==='stacked');
